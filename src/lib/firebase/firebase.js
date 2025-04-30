@@ -1,5 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -17,4 +19,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+// Get a reference to the storage service, which is used to create references in your storage bucket
+const storage = getStorage();
+// Create a storage reference from our storage service
+const storageRef = ref(storage);
+
+// Make a function to upload a file to Firebase Storage
+export const uploadFile = async (file) => {
+  const fileRef = ref(storage, `uploads/${file.name}`);
+  uploadBytes(fileRef, file).then((snapshot) => {
+    console.log('Uploaded a blob or file!');
+  });
+};
