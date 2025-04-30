@@ -23,9 +23,9 @@ const FileUploader = () => {
     };
 
     return (
-        <div>
-          <input type="file" onChange={handleFileChange} className="mb-2" />
-          <button onClick={handleUpload}>
+        <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-8 space-y-6">
+          <input type="file" onChange={handleFileChange} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50" />
+          <button onClick={handleUpload} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50">
             Upload
           </button>
         </div>

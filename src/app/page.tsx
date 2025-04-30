@@ -54,8 +54,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8">
-      <FileUploader />
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-8 space-y-6">
+        <FileUploader />
         <div>
           <label htmlFor="topic" className="block text-lg font-medium text-gray-700 mb-2">
             Topic
