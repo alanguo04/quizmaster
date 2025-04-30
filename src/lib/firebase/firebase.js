@@ -25,6 +25,8 @@ const storage = getStorage();
 // Create a storage reference from our storage service
 const storageRef = ref(storage);
 
+// const analytics = getAnalytics(app);
+
 // Make a function to upload a file to Firebase Storage
 export const uploadFile = async (file) => {
   const fileRef = ref(storage, `uploads/${file.name}`);
@@ -32,3 +34,6 @@ export const uploadFile = async (file) => {
     console.log('Uploaded a blob or file!');
   });
 };
+
+
+export { storage };
