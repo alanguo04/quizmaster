@@ -13,6 +13,7 @@ import { GoogleGenAI } from "@google/genai";
 
 
 export default function Home() {
+  const [topic, setTopic] = useState("History");
   const [questions, setQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -32,13 +33,12 @@ export default function Home() {
 
       */
 
-      const txtContent = "History";
       // 🤖 Send to Gemini API
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
-        contents: `Generate me questions about ${txtContent}`,
+        contents: `Generate me questions about ${topic}`,
       });
       const text = response.text;
       const questions = text.split("\n")
@@ -53,6 +53,13 @@ export default function Home() {
 
   return (
     <div className="p-8 space-y-6">
+      <input
+        type="text"
+        placeholder="Enter topic (e.g. World War II)"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        className="w-full border border-gray-300 rounded px-4 py-2 text-black"
+      />
       <button
         onClick={handleGenerate}
         className="bg-blue-600 text-white px-4 py-2 rounded"
