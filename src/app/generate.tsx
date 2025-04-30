@@ -27,6 +27,7 @@ export default function Generate() {
       */
 
       //  Send to Gemini API
+      
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
       const response = await ai.models.generateContent({
