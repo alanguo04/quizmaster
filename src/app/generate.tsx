@@ -25,7 +25,6 @@ export default function Generate() {
       const txtContent = await fetch(url).then(res => res.text());
 
       */
-
       //  Send to Gemini API
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
