@@ -8,7 +8,12 @@ import { GoogleGenAI } from "@google/genai";
 export default function Generate() {
   const [topic, setTopic] = useState("History");
   const [questions, setQuestions] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [numMC, setNumMC] = useState(3);
+  const [numTF, setNumTF] = useState(1);
+  const [numFR, setNumFR] = useState(1);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -29,15 +34,39 @@ export default function Generate() {
       // 🤖 Send to Gemini API
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
+      const typePromptParts = [];
+      if (numMC > 0) typePromptParts.push(`${numMC} multiple choice`);
+      if (numTF > 0) typePromptParts.push(`${numTF} true/false`);
+      if (numFR > 0) typePromptParts.push(`${numFR} free response`);
+
+      const formatText = typePromptParts.join(", ");
+      const prompt = `Generate ${formatText} quiz questions about ${topic}. Each question should start with a number.
+
+- For multiple choice, include 4 options labeled A. to D., and state the correct answer at the end as: "Answer: A"
+- For true/false, end with: "Answer: True" or "Answer: False"
+- For free response, use "Answer: [Example]" followed by a brief sample answer.`;
+
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
-        contents: `Generate me questions about ${topic}`,
+        contents: prompt,
       });
+
       const text = response.text;
-      const questions = text.split("\n")
-  .map((line) => line.replace(/^\d+\.?\s*/, "").trim())
-  .filter((line) => line.length > 0);
-      setQuestions(questions || []);
+      const rawLines = text.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+
+      const qLines: string[] = [];
+      const aLines: string[] = [];
+
+      rawLines.forEach((line) => {
+        if (/^answer:/i.test(line)) {
+          aLines.push(line);
+        } else {
+          qLines.push(line.replace(/^\*\*\d{3,4}:?\*\*\s*/, ""));
+        }
+      });
+
+      setQuestions(qLines);
+      setAnswers(aLines);
   } catch (err) {
     console.error("Failed to generate questions:", err);
   } finally {
@@ -59,6 +88,42 @@ export default function Generate() {
             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none"
           />
         </div>
+
+        <div className="mb-4">
+        <label className="block text-lg font-medium text-gray-700 mb-2">Question Types</label>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm mb-1">Multiple Choice</label>
+            <input
+              type="number"
+              min="0"
+              value={numMC}
+              onChange={(e) => setNumMC(parseInt(e.target.value))}
+              className="w-full border rounded-lg px-2 py-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">True / False</label>
+            <input
+              type="number"
+              min="0"
+              value={numTF}
+              onChange={(e) => setNumTF(parseInt(e.target.value))}
+              className="w-full border rounded-lg px-2 py-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Free Response</label>
+            <input
+              type="number"
+              min="0"
+              value={numFR}
+              onChange={(e) => setNumFR(parseInt(e.target.value))}
+              className="w-full border rounded-lg px-2 py-1"
+            />
+          </div>
+        </div>
+      </div>
   
         <button
           onClick={handleGenerate}
@@ -77,12 +142,23 @@ export default function Generate() {
                   key={i}
                   className="px-4 py-3 text-base text-gray-900 hover:bg-white transition duration-150"
                 >
-                  <span className="font-medium mr-2">{i + 1}.</span> {q}
+                  {q}
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {answers.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-800">Answers</h2>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            {answers.map((ans, i) => (
+              <li key={i} className="text-gray-700">{ans}</li>
+            ))}
+          </ol>
+        </div>
+      )}
     </>
   );
 }  
