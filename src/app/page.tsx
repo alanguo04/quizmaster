@@ -1,7 +1,7 @@
 "use client";
 
-import FileUploader from "./fileuploader";
-import Generate from "./generate";
+#import FileUploader from "./fileuploader";
+#import Generate from "./generate";
 import Image from "next/image";
 
 import { useState } from "react";
@@ -15,13 +15,11 @@ import { GoogleGenAI } from "@google/genai";
 
 
 export default function Home() {
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-8 space-y-6">
-        <FileUploader />
-        <Generate />
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Welcome</h1>
+        #<FileUploader />
+        #<Generate />
     </div>
   );
 }  
