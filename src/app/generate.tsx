@@ -22,7 +22,7 @@ export default function Generate() {
   const [loading, setLoading] = useState(false);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [quizMode, setQuizMode] = useState(false);
+  const [quizMode, setQuizMode] = useState(true); 
 
   const [numMC, setNumMC] = useState(3);
   const [numTF, setNumTF] = useState(1);
@@ -32,7 +32,7 @@ export default function Generate() {
     setLoading(true);
     setShowResults(false);
     setUserAnswers([]);
-    setQuizMode(false);
+    setQuizMode(true); 
     try {
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
@@ -133,6 +133,89 @@ export default function Generate() {
     return correct;
   };
 
+  const exportToPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${topic} Quiz Results</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 20px; 
+              line-height: 1.6;
+            }
+            h1 { color: #333; text-align: center; }
+            .score { 
+              background-color: #e8f7e8; 
+              padding: 15px; 
+              border-radius: 8px; 
+              text-align: center; 
+              font-size: 18px; 
+              font-weight: bold;
+              margin-bottom: 30px;
+            }
+            .question { 
+              margin-bottom: 25px; 
+              padding: 15px; 
+              border: 1px solid #ddd; 
+              border-radius: 8px;
+            }
+            .question-number { 
+              font-weight: bold; 
+              color: #2563eb;
+              font-size: 16px;
+            }
+            .question-text { 
+              font-size: 16px; 
+              margin: 10px 0;
+            }
+            .answer-line { 
+              margin: 5px 0; 
+              padding-left: 20px;
+            }
+            .correct { color: #059669; }
+            .incorrect { color: #dc2626; }
+            .status { font-weight: bold; }
+            @media print {
+              body { padding: 0; }
+              .question { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${topic} Quiz Results</h1>
+          <div class="score">
+            Your Score: ${calculateScore()} out of ${questions.length}
+          </div>
+          ${questions.map((question, index) => {
+            const userAnswer = getUserAnswer(index);
+            const isCorrect = userAnswer === question.answer;
+            return `
+              <div class="question">
+                <div class="question-number">Question ${index + 1}</div>
+                <div class="question-text">${question.question}</div>
+                <div class="answer-line">Your Answer: <strong>${userAnswer || 'Not answered'}</strong></div>
+                <div class="answer-line">Correct Answer: <strong class="correct">${question.answer}</strong></div>
+                <div class="answer-line status ${isCorrect ? 'correct' : 'incorrect'}">
+                  ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   const toggleQuizMode = () => {
     setQuizMode(!quizMode);
     setShowResults(false);
@@ -221,10 +304,18 @@ export default function Generate() {
           )}
 
           {showResults && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <p className="text-lg font-semibold text-green-800">
-                Your Score: {calculateScore()} out of {questions.length}
-              </p>
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <p className="text-lg font-semibold text-green-800">
+                  Your Score: {calculateScore()} out of {questions.length}
+                </p>
+              </div>
+              <button
+                onClick={exportToPDF}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+              >
+                Print/Save Results as PDF
+              </button>
             </div>
           )}
 
@@ -328,16 +419,18 @@ export default function Generate() {
                         />
                       )}
                       
-                      <div className="border-t border-gray-200 pt-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-500">
-                            {!quizMode || showResults ? 'Answer:' : 'Your answer:'}
-                          </span>
-                          <span className="text-sm text-gray-900 font-medium">
-                            {!quizMode || showResults ? question.answer : (getUserAnswer(index) || 'Not answered')}
-                          </span>
+                      {(!quizMode || showResults) && (
+                        <div className="border-t border-gray-200 pt-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-500">
+                              Answer:
+                            </span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {question.answer}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
