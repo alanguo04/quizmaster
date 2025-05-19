@@ -1,12 +1,10 @@
+// lib/firebase/firebase.js
 import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBKU1D1v3aFT1OpvtUx394jeQD4PC8Mmpg",
   authDomain: "quiz-master-2b880.firebaseapp.com",
@@ -19,21 +17,25 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+// Initialize Analytics if in browser environment
+let analytics;
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.error("Analytics failed to initialize:", error);
+  }
+}
 
-// Get a reference to the storage service, which is used to create references in your storage bucket
-const storage = getStorage();
-// Create a storage reference from our storage service
-const storageRef = ref(storage);
-
-// const analytics = getAnalytics(app);
-
-// Make a function to upload a file to Firebase Storage
-export const uploadFile = async (file) => {
+// Helper function to upload files to Firebase Storage
+const uploadFile = async (file) => {
   const fileRef = ref(storage, `uploads/${file.name}`);
-  uploadBytes(fileRef, file).then((snapshot) => {
-    console.log('Uploaded a blob or file!');
-  });
+  await uploadBytes(fileRef, file);
+  console.log('Uploaded a blob or file!');
+  const downloadURL = await getDownloadURL(fileRef);
+  return downloadURL;
 };
 
-
-export { storage };
+export { db, storage, uploadFile };
