@@ -172,8 +172,40 @@ export default function Generate() {
     return userAnswer?.answer;
   };
 
+  const adjustQuestionMix = () => {
+    const totalCount = numMC + numTF + numFR;
+    const adaptiveCount = Math.round(totalCount * 0.8);
+    const freeResponseCount = totalCount - adaptiveCount;
+  
+    const correct: Record<'multiple-choice' | 'true-false', number> = { 'multiple-choice': 0, 'true-false': 0 };
+    const total: Record<'multiple-choice' | 'true-false', number> = { 'multiple-choice': 0, 'true-false': 0 };
+  
+    questions.forEach((q, i) => {
+      if (q.type === 'multiple-choice' || q.type === 'true-false') {
+        total[q.type]++;
+        if (getUserAnswer(i) === q.answer) correct[q.type]++;
+      }
+    });
+  
+    const mcError = total['multiple-choice'] ? 1 - correct['multiple-choice'] / total['multiple-choice'] : 0;
+    const tfError = total['true-false'] ? 1 - correct['true-false'] / total['true-false'] : 0;
+    const errorSum = mcError + tfError;
+  
+    const mcRatio = errorSum === 0 ? 0.5 : mcError / errorSum;
+    const tfRatio = errorSum === 0 ? 0.5 : tfError / errorSum;
+  
+    const newMC = Math.round(adaptiveCount * mcRatio);
+    const newTF = adaptiveCount - newMC;
+  
+    setNumMC(newMC);
+    setNumTF(newTF);
+    setNumFR(freeResponseCount);
+  };
+  
+
   const checkAnswers = () => {
     setShowResults(true);
+    adjustQuestionMix();
   };
 
   const calculateScore = () => {
@@ -552,6 +584,9 @@ export default function Generate() {
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                     <p className="text-lg font-semibold text-green-800">
                       Your Score: {calculateScore()} out of {questions.length}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Next quiz will focus more on your weak areas based on this result.
                     </p>
                   </div>
                   <button
