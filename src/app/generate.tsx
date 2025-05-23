@@ -54,21 +54,25 @@ export default function Generate() {
     fetchSavedQuizzes();
   }, []);
 
-//   useEffect(() => {
-//   const fetchFileContent = async () => {
-//     if (!selectedFileUrl) return;
+// THIS IS FOR SETTING URL INTO CONTENT
 
-//     try {
-//       const res = await fetch(selectedFileUrl);
-//       const text = await res.text();
-//       setFileContent(text);
-//     } catch (err) {
-//       console.error("Failed to fetch file content:", err);
-//     }
-//   };
+  useEffect(() => {
+  const fetchFileContent = async () => {
+    if (!selectedFileUrl) return;
 
-//   fetchFileContent();
-// }, [selectedFileUrl]);
+    try {
+      // const res = await fetch(selectedFileUrl);
+      // const text = await res.text();
+      // setFileContent(text);
+      setFileContent(selectedFileUrl)
+      
+    } catch (err) {
+      console.error("Failed to fetch file content:", err);
+    }
+  };
+
+  fetchFileContent();
+}, [selectedFileUrl]);
 
   const fetchSavedQuizzes = async () => {
     setIsLoadingHistory(true);
@@ -122,7 +126,7 @@ export default function Generate() {
       // const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
       
       // this is prompt for about the file
-      const prompt = `Generate ${formatText} quiz questions based on content found here ${selectedFileUrl} \n\nFormat each question as follows:
+      const prompt = `Generate ${formatText} quiz questions based on content found here ${fileContent} \n\nFormat each question as follows:
       Multiple choice format:
       Q: [Question]
       A. [Option 1]
