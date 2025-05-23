@@ -126,8 +126,9 @@ export default function Generate() {
       // const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
       
       // this is prompt for about the file
-      const prompt = `Generate ${formatText} quiz questions based on content found here ${fileContent} \n\nFormat each question as follows:
-      Multiple choice format:
+      const prompt = `Generate ${formatText} quiz questions based on content found here ${fileContent} \n\nWrite each question according to the following instructions:
+
+      For multiple choice questions, use this format:
       Q: [Question]
       A. [Option 1]
       B. [Option 2]
@@ -135,13 +136,24 @@ export default function Generate() {
       D. [Option 4]
       Answer: [Letter]
 
-      True/False format:
+      For true/false questions, use this format:
       Q: [Question]
       Answer: True/False
 
-      Free response format:
+      Both multiple choice questions and true/false questions should meet these criteria.
+      1. The question shouldn't be unnecessarily wordy or complicated. That means the question avoids using items like 'None of the above' or 'All of the above' to the extent possible. Only use negatives in the question stem when significant learning outcomes require it. Avoid fill in the blank questions.
+      2. Each multiple choice question should cover a different topic. 
+      3. In multiple choice questions, every possible answer should be plausible.
+
+      For free response questions, use this format:
       Q: [Question]
       Answer: [Example answer]
+
+      Free response questions should try and meet these criteria:
+      1. They require quiz takers to compose an answer instead of select an answer.
+      2. They require the student to write more than one sentence.
+      3. They allow different or original responses or patterns of responses.
+      4. They require subjective judgement to judge accuracy and quality of the responses. 
 
       Number each question starting from 1.`;
 
