@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI,createUserContent,
+  createPartFromUri, } from "@google/genai";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase/firebase";
 import FileDropdown from "./components/fileselect";
@@ -69,6 +70,20 @@ export default function Generate() {
     } catch (err) {
       console.error("Failed to fetch file content:", err);
     }
+
+    // attempt 2 --------------
+    // if (!selectedFileUrl) return;
+
+    // try {
+    //   const response = await fetch(selectedFileUrl);
+    //   if (!response.ok) {
+    //     throw new Error(`HTTP error! status: ${response.status}`);
+    //   }
+    //   const text = await response.text();
+    //   setFileContent(text);
+    // } catch (error) {
+    //   console.error("Failed to fetch file content:", error);
+    // }
   };
 
   fetchFileContent();
@@ -126,7 +141,7 @@ export default function Generate() {
       // const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
       
       // this is prompt for about the file
-      const prompt = `Generate ${formatText} quiz questions based on content found here ${fileContent} \n\nWrite each question according to the following instructions:
+      const prompt = `Generate ${formatText} quiz questions based on uploaded file \n\nWrite each question according to the following instructions:
 
       For multiple choice questions, use this format:
       Q: [Question]
@@ -160,10 +175,28 @@ export default function Generate() {
       // debugging sample prompt
       //const prompt = `return this ${selectedFileUrl}`
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-      });
+      const responsee = await fetch(selectedFileUrl);
+      if (!responsee.ok) throw new Error("Failed to fetch file from Firebase");
+
+      const fileBlob = await responsee.blob();
+
+    // 2. Upload to Gemini
+    const uploadedFile = await ai.files.upload({
+      file: fileBlob,
+      config: {mimeType:"application/pdf"},
+    });
+
+    const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: createUserContent([
+      createPartFromUri(uploadedFile.uri, uploadedFile.mimeType),
+      prompt,
+    ]),
+  });
+      // const response = await ai.models.generateContent({
+      //   model: "gemini-2.0-flash", 
+      //   contents: prompt,
+      // });
 
       const text = response.text;
       const questionBlocks = text.split(/\n(?=\d+\.)|(?=Q:)/);
