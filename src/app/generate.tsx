@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase/firebase";
+import FileDropdown from "./components/fileselect";
 
 // Gemini API Key
 // AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158
@@ -41,6 +42,10 @@ export default function Generate() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // data for file
+  const [selectedFileUrl, setSelectedFileUrl] = useState("");
+  const [fileContent, setFileContent] = useState("");
+
   const [numMC, setNumMC] = useState(3);
   const [numTF, setNumTF] = useState(1);
   const [numFR, setNumFR] = useState(1);
@@ -48,6 +53,22 @@ export default function Generate() {
   useEffect(() => {
     fetchSavedQuizzes();
   }, []);
+
+//   useEffect(() => {
+//   const fetchFileContent = async () => {
+//     if (!selectedFileUrl) return;
+
+//     try {
+//       const res = await fetch(selectedFileUrl);
+//       const text = await res.text();
+//       setFileContent(text);
+//     } catch (err) {
+//       console.error("Failed to fetch file content:", err);
+//     }
+//   };
+
+//   fetchFileContent();
+// }, [selectedFileUrl]);
 
   const fetchSavedQuizzes = async () => {
     setIsLoadingHistory(true);
@@ -96,8 +117,12 @@ export default function Generate() {
       if (numFR > 0) typePromptParts.push(`${numFR} free response`);
 
       const formatText = typePromptParts.join(", ");
-      const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
-
+      
+      // this is prompt for just a singular word history
+      // const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
+      
+      // this is prompt for about the file
+      const prompt = `Generate ${formatText} quiz questions based on content found here ${selectedFileUrl} \n\nFormat each question as follows:
       Multiple choice format:
       Q: [Question]
       A. [Option 1]
@@ -115,6 +140,9 @@ export default function Generate() {
       Answer: [Example answer]
 
       Number each question starting from 1.`;
+
+      // debugging sample prompt
+      //const prompt = `return this ${selectedFileUrl}`
 
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
@@ -464,8 +492,22 @@ export default function Generate() {
             </button>
           </div>
 
+          
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
-            <div>
+            {
+              // for selecting file
+            }
+            <FileDropdown
+              selectedFileUrl={selectedFileUrl}
+              setSelectedFileUrl={setSelectedFileUrl}
+            />
+
+            {/* <img
+  src={selectedFileUrl}
+  alt="Uploaded Image"
+  className="max-w-full h-auto rounded-lg shadow"
+/> */}
+            {/* <div>
               <label htmlFor="topic" className="block text-lg font-medium text-gray-700 mb-2">
                 Topic
               </label>
@@ -478,7 +520,7 @@ export default function Generate() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none"
                 disabled={selectedQuiz !== null}
               />
-            </div>
+            </div> */}
 
             <div className="mb-4 mt-4">
               <label className="block text-lg font-medium text-gray-700 mb-2">Question Types</label>

@@ -1,7 +1,7 @@
 // lib/firebase/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, listAll, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
@@ -38,4 +38,24 @@ const uploadFile = async (file) => {
   return downloadURL;
 };
 
-export { db, storage, uploadFile };
+
+export const listFiles = async () => {
+  const storage = getStorage();
+  const listRef = ref(storage, 'uploads/'); // change 'uploads/' to your actual folder if needed
+
+  try {
+    const res = await listAll(listRef);
+    const files = await Promise.all(
+      res.items.map(async (itemRef) => {
+        const url = await getDownloadURL(itemRef);
+        return { name: itemRef.name, url };
+      })
+    );
+    return files;
+  } catch (err) {
+    console.error("Error listing files:", err);
+    return [];
+  }
+};
+
+export { db, storage, uploadFile, listFiles };
