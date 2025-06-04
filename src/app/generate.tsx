@@ -42,6 +42,7 @@ export default function Generate() {
   const [selectedQuiz, setSelectedQuiz] = useState<SavedQuiz | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [score, setScore] = useState(0);
 
   // data for file
   const [selectedFileUrl, setSelectedFileUrl] = useState("");
@@ -120,6 +121,7 @@ export default function Generate() {
   };
 
   const handleGenerate = async () => {
+    setScore(0);
     setLoading(true);
     setShowResults(false);
     setUserAnswers([]);
@@ -280,21 +282,65 @@ export default function Generate() {
   };
   
 
-  const checkAnswers = () => {
+  const checkAnswers = async () => {
+    setScore(await calculateScore());
     setShowResults(true);
     adjustQuestionMix();
   };
 
-  const calculateScore = () => {
-    let correct = 0;
-    questions.forEach((question, index) => {
-      const userAnswer = getUserAnswer(index);
-      if (userAnswer === question.answer) {
-        correct++;
+  // const calculateScore = () => {
+  //   let correct = 0;
+  //   questions.forEach((question, index) => {
+  //     const userAnswer = getUserAnswer(index);
+  //     if (userAnswer === question.answer) {
+  //       correct++;
+  //     }
+  //   });
+  //   return correct;
+  // };
+
+  // add async if API
+
+  // NOTE FOR ALAN, Maybe make this function into check answers and just use react state to save score.
+  const calculateScore = async () => {
+  let correct = 0;
+
+  const ai2 = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
+
+  for (let index = 0; index < questions.length; index++) {
+    const question = questions[index];
+    const userAnswer = getUserAnswer(index);
+
+    if (question.type === 'free-response') {
+      if (!userAnswer) continue;
+
+      const prompt = `Based on this question:\n${question.question}\n\nGrade on a numerical scale from 1 to 10 how much this response:\n"${userAnswer}"\n\nmatches this ideal answer:\n"${question.answer}".\n\nOnly return the number.`;
+
+      console.log(prompt);
+
+      const debug = 'return 0.69'
+      try {
+        const response = await ai2.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+        });
+
+        const text = response.text;
+        console.log(text);
+        const score2 = parseFloat(text.match(/[\d.]+/)?.[0] || "0");
+
+        correct += score2;  // You can adjust this threshold
+        console.log(score2)
+      } catch (err) {
+        console.error("Free response grading failed:", err);
       }
-    });
-    return correct;
-  };
+    } else {
+      if (userAnswer === question.answer) correct++;
+    }
+  }
+
+  return correct;
+};
 
   const viewQuizHistory = () => {
     setShowHistory(true);
@@ -418,7 +464,7 @@ export default function Generate() {
         topic,
         questions,
         userAnswers,
-        score: calculateScore(),
+        score: score,
         timestamp: Timestamp.now()
       };
       
@@ -486,7 +532,7 @@ export default function Generate() {
           <body>
             <h1>${topic} Quiz Results</h1>
             <div class="score">
-              Your Score: ${calculateScore()} out of ${questions.length}
+              Your Score: ${score} out of ${questions.length}
             </div>
             ${questions.map((question, index) => {
               const userAnswer = getUserAnswer(index);
@@ -674,7 +720,7 @@ export default function Generate() {
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                     <p className="text-lg font-semibold text-green-800">
-                      Your Score: {calculateScore()} out of {questions.length}
+                      Your Score: {score} out of {questions.length}
                     </p>
                     <p className="text-sm text-gray-600 mt-2">
                       Next quiz will focus more on your weak areas based on this result.
