@@ -805,7 +805,7 @@ export default function Generate() {
     onClick={() => setShowReason(!showReason)}
     className="text-sm border border-gray-400 px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition"
   >
-    {showReason ? "Hide Reasoning" : "Show Reasoning"}
+    {showReason ? "Hide Reasoning" : "Show Quiz Construction Reasoning"}
   </button>
 
   {showReason && (
