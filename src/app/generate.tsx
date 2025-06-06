@@ -13,6 +13,7 @@ interface QuizQuestion {
   question: string;
   options?: string[];
   answer: string;
+  score: number;
 }
 
 interface UserAnswer {
@@ -314,7 +315,12 @@ export default function Generate() {
     if (question.type === 'free-response') {
       if (!userAnswer) continue;
 
-      const prompt = `Based on this question:\n${question.question}\n\nGrade on a numerical scale from 1 to 10 how much this response:\n"${userAnswer}"\n\nmatches this ideal answer:\n"${question.answer}".\n\nOnly return the number.`;
+      const prompt = `Based on this question:\n${question.question}\n\nGrade on a numerical scale from 0-1 how much this
+       response:\n"${userAnswer}"\n\nmatches this ideal answer:\n"${question.answer}". It doesn't have to be perfect, but it should be close.
+       A response that gets the general idea is around 0.7-1, a response that has some ideas right but missing stuff or is wrong for some is 0.3-0.6,
+       and a completely wrong answer is a 0-0.2.
+       \n\nOnly return the number.
+       `;
 
       console.log(prompt);
 
@@ -330,12 +336,18 @@ export default function Generate() {
         const score2 = parseFloat(text.match(/[\d.]+/)?.[0] || "0");
 
         correct += score2;  // You can adjust this threshold
+        question.score = score2;
         console.log(score2)
       } catch (err) {
         console.error("Free response grading failed:", err);
       }
     } else {
-      if (userAnswer === question.answer) correct++;
+      if (userAnswer === question.answer) {
+        correct++;
+        question.score = 1;
+      } else {
+        question.score = 0;
+      }
     }
   }
 
@@ -425,7 +437,13 @@ export default function Generate() {
           </div>
           ${quiz.questions.map((question, index) => {
             const userAnswer = quiz.userAnswers.find(a => a.questionIndex === index)?.answer;
-            const isCorrect = userAnswer === question.answer;
+            let isCorrect;
+
+            if (question.type === 'free-response') {
+              isCorrect = question.score > 0.5;
+            } else {
+              isCorrect = userAnswer === question.answer;
+            }
             return `
               <div class="question">
                 <div class="question-number">Question ${index + 1}</div>
@@ -855,7 +873,19 @@ export default function Generate() {
                                 <span className="text-sm text-gray-900 font-medium">
                                   {question.answer}
                                 </span>
+                                
                               </div>
+                              {showResults && (
+                                  <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-500">
+                                      Score:
+                                    </span>
+                                    <span className="text-sm text-gray-900 font-medium">
+                                      {question.score} out of 1
+                                    </span>
+                                  </div>
+                                )}
+                              
                             </div>
                           )}
                         </div>
