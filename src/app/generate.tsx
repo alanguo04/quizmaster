@@ -45,6 +45,8 @@ export default function Generate() {
   const [isSaving, setIsSaving] = useState(false);
   const [score, setScore] = useState(0);
 
+  const [Reason, setReason] = useState("");
+
   // data for file
   const [selectedFileUrl, setSelectedFileUrl] = useState("");
   const [fileContent, setFileContent] = useState("");
@@ -52,6 +54,8 @@ export default function Generate() {
   const [numMC, setNumMC] = useState(3);
   const [numTF, setNumTF] = useState(1);
   const [numFR, setNumFR] = useState(1);
+
+  const [showReason, setShowReason] = useState(false);
 
   useEffect(() => {
     fetchSavedQuizzes();
@@ -130,19 +134,70 @@ export default function Generate() {
     setSelectedQuiz(null);
     setShowHistory(false);
     
+
+
     try {
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
 
-      const typePromptParts = [];
-      if (numMC > 0) typePromptParts.push(`${numMC} multiple choice`);
-      if (numTF > 0) typePromptParts.push(`${numTF} true/false`);
-      if (numFR > 0) typePromptParts.push(`${numFR} free response`);
+      const typeSuggestionPrompt = `
+      Based on the content of the uploaded file, suggest how many multiple choice, true/false, and free response questions should be generated for a balanced quiz. 
+      Give a reasoning for why you selected it as well and explain without first person. 
+      
+      Must have at least 1 of each type.
+      Return your answer in the following format:
+
+      Multiple Choice: [number]
+      True/False: [number]
+      Free Response: [number]
+      Reasoning: [explanation]
+    `;
+    const responsee = await fetch(selectedFileUrl);
+      if (!responsee.ok) throw new Error("Failed to fetch file from Firebase");
+
+      const fileBlob = await responsee.blob();
+
+    // 2. Upload to Gemini
+    const uploadedFile = await ai.files.upload({
+      file: fileBlob,
+      config: {mimeType:"application/pdf"},
+    });
+
+      
+
+      const responseformat = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: createUserContent([
+          createPartFromUri(uploadedFile.uri, uploadedFile.mimeType),
+          typeSuggestionPrompt,
+        ]),
+      });
+        const typeText = responseformat.text;
+        const mcMatch = typeText.match(/Multiple Choice:\s*(\d+)/i);
+        const tfMatch = typeText.match(/True\/False:\s*(\d+)/i);
+        const frMatch = typeText.match(/Free Response:\s*(\d+)/i);
+        const reasonMatch = typeText.match(/Reasoning:\s*(.*)/i);
+      
+        const numMCParsed = mcMatch ? parseInt(mcMatch[1]) : 0;
+        const numTFParsed = tfMatch ? parseInt(tfMatch[1]) : 0;
+        const numFRParsed = frMatch ? parseInt(frMatch[1]) : 0;
+    
+        setNumMC(numMCParsed);
+        setNumTF(numTFParsed);
+        setNumFR(numFRParsed);
+        setReason(reasonMatch ? reasonMatch[1] : "");
+        console.log(numMCParsed, numTFParsed, numFRParsed);
+
+        const typePromptParts = [];
+        // some reason numMC aren't changed yet when these happen, but works when I display in HTML
+      if (numMC > 0) typePromptParts.push(`${numMCParsed} multiple choice`);
+      if (numTF > 0) typePromptParts.push(`${numTFParsed} true/false`);
+      if (numFR > 0) typePromptParts.push(`${numFRParsed} free response`);
 
       const formatText = typePromptParts.join(", ");
       
       // this is prompt for just a singular word history
       // const prompt = `Generate ${formatText} quiz questions about ${topic}. Format each question as follows:
-      
+      console.log(formatText);
       // this is prompt for about the file
       const prompt = `Generate ${formatText} quiz questions based on uploaded file \n\nWrite each question according to the following instructions:
 
@@ -178,16 +233,7 @@ export default function Generate() {
       // debugging sample prompt
       //const prompt = `return this ${selectedFileUrl}`
 
-      const responsee = await fetch(selectedFileUrl);
-      if (!responsee.ok) throw new Error("Failed to fetch file from Firebase");
-
-      const fileBlob = await responsee.blob();
-
-    // 2. Upload to Gemini
-    const uploadedFile = await ai.files.upload({
-      file: fileBlob,
-      config: {mimeType:"application/pdf"},
-    });
+      
 
     const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
@@ -591,6 +637,25 @@ export default function Generate() {
     setUserAnswers([]);
   };
 
+  const handleChooseTypes = () => {
+    // You can replace this logic with actual AI-generated values
+    const aiChosen = {
+      mc: 3,
+      tf: 2,
+      fr: 1,
+      reason: "These numbers were chosen to balance conceptual understanding (FR), factual recall (TF), and application (MC)."
+    };
+
+    // setNumMC(aiChosen.mc);
+    // setNumTF(aiChosen.tf);
+    // setNumFR(aiChosen.fr);
+
+    setNumMC(1);
+    setNumTF(1);
+    setNumFR(1);
+    setReason("Testing!");
+  };
+
   return (
     <div className="container mx-auto p-4">
       {!showHistory ? (
@@ -635,7 +700,9 @@ export default function Generate() {
               />
             </div> */}
 
-            <div className="mb-4 mt-4">
+            {/* This is all letting the user choose how many questions of each type they want. */}
+
+            {/* <div className="mb-4 mt-4">
               <label className="block text-lg font-medium text-gray-700 mb-2">Question Types</label>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -672,7 +739,23 @@ export default function Generate() {
                   />
                 </div>
               </div>
-            </div>
+            </div> */}
+
+            {/* This is us doing it */}
+
+            {/* <button
+        onClick={handleChooseTypes}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+        disabled={selectedQuiz !== null}
+      >
+        Let AI Choose Question Types
+      </button>
+      {Reason && (
+        <p className="mt-3 text-sm text-gray-600 italic">
+          {numMC} multiple choice, {numTF} true/false, {numFR} free response
+          {Reason}
+        </p>
+      )} */}
 
             <button
               onClick={handleGenerate}
@@ -715,7 +798,26 @@ export default function Generate() {
 
           {questions.length > 0 && !selectedQuiz && (
             <div className="space-y-6">
+              {/* This is the reasoning for the question types */}
+              {Reason && (
+  <div className="text-center mb-6">
+  <button
+    onClick={() => setShowReason(!showReason)}
+    className="text-sm border border-gray-400 px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition"
+  >
+    {showReason ? "Hide Reasoning" : "Show Reasoning"}
+  </button>
+
+  {showReason && (
+    <div className="mt-4 mx-auto max-w-3xl bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 italic whitespace-pre-wrap text-left">
+      {Reason}
+    </div>
+  )}
+</div>
+
+)}
               <div className="flex justify-between items-center">
+
                 <h2 className="text-2xl font-semibold text-gray-800">Quiz Questions</h2>
                 <button
                   onClick={toggleQuizMode}
