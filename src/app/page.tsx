@@ -22,29 +22,35 @@ export default function Home() {
         Generate personalized quizzes to help you study effectively and ace your exams!
       </p>
       <div className="flex justify-center">
+        <a href="/upload">
         <button className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition duration-300">
           Get Started
         </button>
+        </a>
       </div>
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+        <a href="/upload">
         <div className="p-6 border rounded-lg shadow-sm hover:shadow-md transition duration-300">
           <h2 className="text-xl font-semibold mb-2 text-blue-500">Upload Material</h2>
           <p className="text-gray-600">
         Upload your study materials to create personalized quizzes effortlessly.
           </p>
         </div>
+        </a>
+        <a href="/practice">
         <div className="p-6 border rounded-lg shadow-sm hover:shadow-md transition duration-300">
           <h2 className="text-xl font-semibold mb-2 text-blue-500">Customize Quizzes</h2>
           <p className="text-gray-600">
         Tailor quizzes to your specific needs and focus on key topics.
           </p>
         </div>
-        <div className="p-6 border rounded-lg shadow-sm hover:shadow-md transition duration-300">
+        </a>
+        {/* <div className="p-6 border rounded-lg shadow-sm hover:shadow-md transition duration-300">
           <h2 className="text-xl font-semibold mb-2 text-blue-500">Track Progress</h2>
           <p className="text-gray-600">
         Keep track of your progress and identify areas for improvement.
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
