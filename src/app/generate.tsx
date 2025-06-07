@@ -55,6 +55,8 @@ export default function Generate() {
   const [numTF, setNumTF] = useState(1);
   const [numFR, setNumFR] = useState(1);
 
+  const [firstGeneration, setFirstGeneration] = useState(true);
+
   const [showReason, setShowReason] = useState(false);
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function Generate() {
       // const text = await res.text();
       // setFileContent(text);
       setFileContent(selectedFileUrl)
+      setFirstGeneration(true);
       
     } catch (err) {
       console.error("Failed to fetch file content:", err);
@@ -136,8 +139,21 @@ export default function Generate() {
     
 
 
+    
     try {
       const ai = new GoogleGenAI({ apiKey: "AIzaSyApQcY06qqFCjj6yzJwgogJP9RV46PA158" });
+      const responsee = await fetch(selectedFileUrl);
+      if (!responsee.ok) throw new Error("Failed to fetch file from Firebase");
+
+      const fileBlob = await responsee.blob();
+
+    // 2. Upload to Gemini
+    const uploadedFile = await ai.files.upload({
+      file: fileBlob,
+      config: {mimeType:"application/pdf"},
+    });
+      if (firstGeneration) {
+      
 
       const typeSuggestionPrompt = `
       Based on the content of the uploaded file, suggest how many multiple choice, true/false, and free response questions should be generated for a balanced quiz. 
@@ -151,16 +167,7 @@ export default function Generate() {
       Free Response: [number]
       Reasoning: [explanation]
     `;
-    const responsee = await fetch(selectedFileUrl);
-      if (!responsee.ok) throw new Error("Failed to fetch file from Firebase");
-
-      const fileBlob = await responsee.blob();
-
-    // 2. Upload to Gemini
-    const uploadedFile = await ai.files.upload({
-      file: fileBlob,
-      config: {mimeType:"application/pdf"},
-    });
+    
 
       
 
@@ -187,11 +194,17 @@ export default function Generate() {
         setReason(reasonMatch ? reasonMatch[1] : "");
         console.log(numMCParsed, numTFParsed, numFRParsed);
 
-        const typePromptParts = [];
+        var typePromptParts = [];
         // some reason numMC aren't changed yet when these happen, but works when I display in HTML
       if (numMC > 0) typePromptParts.push(`${numMCParsed} multiple choice`);
       if (numTF > 0) typePromptParts.push(`${numTFParsed} true/false`);
       if (numFR > 0) typePromptParts.push(`${numFRParsed} free response`);
+    } else {
+      var typePromptParts = [];
+      if (numMC > 0) typePromptParts.push(`${numMC} multiple choice`);
+      if (numTF > 0) typePromptParts.push(`${numTF} true/false`);
+      if (numFR > 0) typePromptParts.push(`${numFR} free response`);
+    }
 
       const formatText = typePromptParts.join(", ");
       
@@ -326,6 +339,8 @@ export default function Generate() {
     setNumMC(newMC);
     setNumTF(newTF);
     setNumFR(freeResponseCount);
+    setFirstGeneration(false);
+    setReason("Quiz Questions have adapted based on your results");
   };
   
 
